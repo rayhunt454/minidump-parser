@@ -9,7 +9,7 @@ from .minidump_structs import HadnleInfo
 class HandleParser:
     """Парсер хэндлов"""
     
-    TARGET_TYPES = {'Key', 'Mutant', 'File'}
+    TARGET_TYPES = {'Key', 'Mutant', 'File', 'Directory'}
     
     def __init__(self, parser: MiniDumpParser):
         self.parser = parser
@@ -42,9 +42,9 @@ class HandleParser:
                 processed += 1
                 
                 if size_of_descriptor == 32:
-                    handle_info = self.parse_handle_descriptor_2(data, reader)
-                else:
                     handle_info = self.parse_handle_descriptor(data, reader)
+                else:
+                    handle_info = self.parse_handle_descriptor_2(data, reader)
                 
                 if handle_info:
                     self.handles.append(handle_info)
@@ -77,7 +77,6 @@ class HandleParser:
             granted_access = struct.unpack_from('<I', data, offset + 20)[0]
             handle_count = struct.unpack_from('<I', data, offset + 24)[0]
             pointer_count = struct.unpack_from('<I', data, offset + 28)[0]
-            
             type_name = self.parser.read_unicode_string(type_name_rva)
             if not type_name or type_name not in self.TARGET_TYPES:
                 return None
@@ -86,17 +85,15 @@ class HandleParser:
             if not object_name:
                 return None
             
-            if len(object_name) > 0:
-                handle_info = HadnleInfo(
-                    Handle=f"0x{handle:X}",
-                    Type=type_name,
-                    ObjectName=object_name,
-                    PointCount=pointer_count,
-                    AccessRight=self.decode_access_rights(type_name, granted_access)
-                )                
-                return handle_info
-            
-            return None
+            handle_info = HadnleInfo(
+                Handle=f"0x{handle:X}",
+                Type=type_name,
+                ObjectName=object_name,
+                PointCount=pointer_count,
+                AccessRight=self.decode_access_rights(type_name, granted_access)
+            )                
+            return handle_info
+
         except Exception as e:
             print("Error Hadnle Descriptor: ", e)
             return None
@@ -114,6 +111,7 @@ class HandleParser:
             reserved0 = struct.unpack_from('<I', data, offset + 36)[0]
             
             type_name = self.parser.read_unicode_string(type_name_rva)
+            
             if not type_name or type_name not in self.TARGET_TYPES:
                 return None
             
@@ -121,18 +119,16 @@ class HandleParser:
             if not object_name:
                 return None
             
-            if len(object_name) > 0:
-                handle_info = HadnleInfo(
-                    Handle=f"0x{handle:X}",
-                    Type=type_name,
-                    ObjectName=object_name,
-                    PointCount=pointer_count,
-                    AccessRight=self.decode_access_rights(type_name, granted_access)
-                )
-          
-                return handle_info
             
-            return None
+            handle_info = HadnleInfo(
+                Handle=f"0x{handle:X}",
+                Type=type_name,
+                ObjectName=object_name,
+                PointCount=pointer_count,
+                AccessRight=self.decode_access_rights(type_name, granted_access)
+            )
+        
+            return handle_info
             
         except Exception as e:
             print("Error Hadnle Descriptor 2: ", e)
